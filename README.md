@@ -72,22 +72,26 @@ The `compile` function walks the path edge by edge, threading a `WireAllocator` 
 use plonkish_cat::*;
 use comp_cat_rs::collapse::free_category::{Edge, Path};
 
-// Build the standard PLONKish graph.
-let graph = PlonkishGraph::<F101>::standard();
+fn main() -> Result<(), Error> {
+    // Build the standard PLONKish graph.
+    let graph = PlonkishGraph::<F101>::standard();
 
-// Compose: dup (1 -> 2) then mul (2 -> 1) = squaring circuit.
-let dup = Path::singleton(&graph, Edge::new(3)).unwrap();
-let mul = Path::singleton(&graph, Edge::new(1)).unwrap();
-let square = dup.compose(mul).unwrap();
+    // Compose: dup (1 -> 2) then mul (2 -> 1) = squaring circuit.
+    let dup = Path::singleton(&graph, Edge::new(3))?;
+    let mul = Path::singleton(&graph, Edge::new(1))?;
+    let square = dup.compose(mul)?;
 
-// Compile to constraints.
-let cs = compile(&graph, &square).unwrap();
+    // Compile to constraints.
+    let cs = compile(&graph, &square)?;
 
-// The squaring circuit generates:
-//   2 copy constraints (dup: w0 -> w1, w0 -> w2)
-//   1 polynomial constraint (mul: w3 - w1*w2 = 0)
-assert_eq!(cs.copy_constraints().len(), 2);
-assert_eq!(cs.constraints().len(), 1);
+    // The squaring circuit generates:
+    //   2 copy constraints (dup: w0 -> w1, w0 -> w2)
+    //   1 polynomial constraint (mul: w3 - w1*w2 = 0)
+    assert_eq!(cs.copy_constraints().len(), 2);
+    assert_eq!(cs.constraints().len(), 1);
+
+    Ok(())
+}
 ```
 
 ## Example: verifying x^2
@@ -99,36 +103,40 @@ use plonkish_cat::*;
 use plonkish_cat::interpret::compile_with_io;
 use comp_cat_rs::collapse::free_category::{Edge, Path};
 
-// Build the circuit: dup then mul.
-let graph = PlonkishGraph::<F101>::standard();
-let dup = Path::singleton(&graph, Edge::new(3)).unwrap();
-let mul = Path::singleton(&graph, Edge::new(1)).unwrap();
-let square = dup.compose(mul).unwrap();
+fn main() -> Result<(), Error> {
+    // Build the circuit: dup then mul.
+    let graph = PlonkishGraph::<F101>::standard();
+    let dup = Path::singleton(&graph, Edge::new(3))?;
+    let mul = Path::singleton(&graph, Edge::new(1))?;
+    let square = dup.compose(mul)?;
 
-// Compile with I/O info.
-let (cs, input, output) = compile_with_io(&graph, &square).unwrap();
+    // Compile with I/O info.
+    let (cs, input, output) = compile_with_io(&graph, &square)?;
 
-// Input is 1 wire, output is 1 wire.
-assert_eq!(input.count(), WireCount::new(1));
-assert_eq!(output.count(), WireCount::new(1));
+    // Input is 1 wire, output is 1 wire.
+    assert_eq!(input.count(), WireCount::new(1));
+    assert_eq!(output.count(), WireCount::new(1));
 
-// Wire layout after compilation:
-//   w0: input (x)
-//   w1, w2: dup outputs (both equal x, via copy constraints)
-//   w3: mul output (x * x)
+    // Wire layout after compilation:
+    //   w0: input (x)
+    //   w1, w2: dup outputs (both equal x, via copy constraints)
+    //   w3: mul output (x * x)
 
-// Assign x = 3, so x^2 = 9.
-let assignment = |w: Wire| -> Result<F101, Error> {
-    match w.index() {
-        0 => Ok(F101::new(3)),   // input
-        1 => Ok(F101::new(3)),   // dup output 0
-        2 => Ok(F101::new(3)),   // dup output 1
-        3 => Ok(F101::new(9)),   // mul output (3 * 3)
-        _ => Err(Error::WireOutOfBounds { wire_index: w.index(), allocated: 4 }),
-    }
-};
+    // Assign x = 3, so x^2 = 9.
+    let assignment = |w: Wire| -> Result<F101, Error> {
+        match w.index() {
+            0 => Ok(F101::new(3)),   // input
+            1 => Ok(F101::new(3)),   // dup output 0
+            2 => Ok(F101::new(3)),   // dup output 1
+            3 => Ok(F101::new(9)),   // mul output (3 * 3)
+            _ => Err(Error::WireOutOfBounds { wire_index: w.index(), allocated: 4 }),
+        }
+    };
 
-assert!(cs.is_satisfied(&assignment).unwrap());
+    assert!(cs.is_satisfied(&assignment)?);
+
+    Ok(())
+}
 ```
 
 ## Example: constant multiplication
@@ -143,22 +151,26 @@ For the current version, the simplest encoding uses the standard gates directly:
 use plonkish_cat::*;
 use comp_cat_rs::collapse::free_category::{Edge, Path};
 
-// Add a Const(7) gate to the graph.
-let graph = PlonkishGraph::<F101>::standard();
-let (graph, const7) = graph.with_const(F101::new(7));
+fn main() -> Result<(), Error> {
+    // Add a Const(7) gate to the graph.
+    let graph = PlonkishGraph::<F101>::standard();
+    let (graph, const7) = graph.with_const(F101::new(7));
 
-// Const(7): 0 -> 1 produces a wire constrained to 7.
-let path = Path::singleton(&graph, const7).unwrap();
-let cs = compile(&graph, &path).unwrap();
+    // Const(7): 0 -> 1 produces a wire constrained to 7.
+    let path = Path::singleton(&graph, const7)?;
+    let cs = compile(&graph, &path)?;
 
-// w0 must equal 7.
-let assignment = |w: Wire| -> Result<F101, Error> {
-    match w.index() {
-        0 => Ok(F101::new(7)),
-        _ => Err(Error::WireOutOfBounds { wire_index: w.index(), allocated: 1 }),
-    }
-};
-assert!(cs.is_satisfied(&assignment).unwrap());
+    // w0 must equal 7.
+    let assignment = |w: Wire| -> Result<F101, Error> {
+        match w.index() {
+            0 => Ok(F101::new(7)),
+            _ => Err(Error::WireOutOfBounds { wire_index: w.index(), allocated: 1 }),
+        }
+    };
+    assert!(cs.is_satisfied(&assignment)?);
+
+    Ok(())
+}
 ```
 
 ## Key types
