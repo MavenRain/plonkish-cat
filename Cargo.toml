@@ -1,6 +1,6 @@
 [package]
 name = "plonkish-cat"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "PLONKish circuit system built on comp-cat-rs: circuits as morphisms in a free category"
 license = "MIT"
