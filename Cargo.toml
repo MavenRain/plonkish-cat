@@ -2,6 +2,11 @@
 name = "plonkish-cat"
 version = "0.1.0"
 edition = "2024"
+description = "PLONKish circuit system built on comp-cat-rs: circuits as morphisms in a free category"
+license = "MIT"
+readme = "README.md"
+keywords = ["zero-knowledge", "plonk", "category-theory", "circuits", "halo2"]
+categories = ["mathematics", "cryptography"]
 
 [dependencies]
 comp-cat-rs = "0.3"
