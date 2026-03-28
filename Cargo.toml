@@ -1,0 +1,13 @@
+[package]
+name = "plonkish-cat"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+comp-cat-rs = "0.3"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = "warn"
+needless_pass_by_value = "warn"
+manual_map = "warn"
