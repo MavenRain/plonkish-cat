@@ -7,11 +7,11 @@
 //! a functor on composed circuits.
 
 use comp_cat_rs::collapse::free_category::Path;
+use field_cat::Field;
 
-use crate::constraint::{Constraint, CopyConstraint, ConstraintSet};
+use crate::constraint::{Constraint, ConstraintSet, CopyConstraint};
 use crate::error::Error;
 use crate::expr::Expression;
-use crate::field::Field;
 use crate::gate::{PlonkishGraph, PrimitiveGate};
 use crate::wire::{WireAllocator, WireCount, WireRange};
 
@@ -29,16 +29,14 @@ fn interpret_gate<F: Field>(
             let in0 = Expression::wire(input.wire_at(0)?);
             let in1 = Expression::wire(input.wire_at(1)?);
             let out = Expression::wire(output.wire_at(0)?);
-            Ok(ConstraintSet::empty()
-                .with_constraint(Constraint::new(out - (in0 + in1))))
+            Ok(ConstraintSet::empty().with_constraint(Constraint::new(out - (in0 + in1))))
         }
         PrimitiveGate::Mul => {
             // out = in0 * in1  =>  out - in0 * in1 = 0
             let in0 = Expression::wire(input.wire_at(0)?);
             let in1 = Expression::wire(input.wire_at(1)?);
             let out = Expression::wire(output.wire_at(0)?);
-            Ok(ConstraintSet::empty()
-                .with_constraint(Constraint::new(out - in0 * in1)))
+            Ok(ConstraintSet::empty().with_constraint(Constraint::new(out - in0 * in1)))
         }
         PrimitiveGate::Const(c) => {
             // out = c  =>  out - c = 0
@@ -53,10 +51,7 @@ fn interpret_gate<F: Field>(
             let bool_check = inp.clone() * (one - inp);
             Ok(ConstraintSet::empty()
                 .with_constraint(Constraint::new(bool_check))
-                .with_copy(CopyConstraint::new(
-                    input.wire_at(0)?,
-                    output.wire_at(0)?,
-                )))
+                .with_copy(CopyConstraint::new(input.wire_at(0)?, output.wire_at(0)?)))
         }
         PrimitiveGate::Dup => {
             // Both outputs equal the input (copy constraints).
@@ -89,10 +84,7 @@ struct CompileState<F: Field> {
 ///
 /// Returns an error if the path references invalid edges or
 /// wire counts are mismatched.
-pub fn compile<F: Field>(
-    graph: &PlonkishGraph<F>,
-    path: &Path,
-) -> Result<ConstraintSet<F>, Error> {
+pub fn compile<F: Field>(graph: &PlonkishGraph<F>, path: &Path) -> Result<ConstraintSet<F>, Error> {
     if path.is_empty() {
         return Ok(ConstraintSet::empty());
     }
@@ -103,35 +95,35 @@ pub fn compile<F: Field>(
         prev_output: None,
     };
 
-    let result = path
-        .edges()
-        .iter()
-        .try_fold(initial, |state, edge| -> Result<CompileState<F>, Error> {
-            let spec = graph.gate_spec_at(*edge)?;
-            let gate = spec.gate();
+    let result =
+        path.edges()
+            .iter()
+            .try_fold(initial, |state, edge| -> Result<CompileState<F>, Error> {
+                let spec = graph.gate_spec_at(*edge)?;
+                let gate = spec.gate();
 
-            // Allocate input wires: reuse previous output, or allocate fresh.
-            let (input, allocator) = state.prev_output.map_or_else(
-                || -> Result<(WireRange, WireAllocator), Error> {
-                    let input_count = graph.wire_count_at(spec.source())?;
-                    Ok(state.allocator.allocate(input_count))
-                },
-                |prev| Ok((prev, state.allocator)),
-            )?;
+                // Allocate input wires: reuse previous output, or allocate fresh.
+                let (input, allocator) = state.prev_output.map_or_else(
+                    || -> Result<(WireRange, WireAllocator), Error> {
+                        let input_count = graph.wire_count_at(spec.source())?;
+                        Ok(state.allocator.allocate(input_count))
+                    },
+                    |prev| Ok((prev, state.allocator)),
+                )?;
 
-            // Allocate output wires.
-            let output_count = graph.wire_count_at(spec.target())?;
-            let (output, allocator) = allocator.allocate(output_count);
+                // Allocate output wires.
+                let output_count = graph.wire_count_at(spec.target())?;
+                let (output, allocator) = allocator.allocate(output_count);
 
-            // Generate constraints for this gate.
-            let gate_constraints = interpret_gate(gate, &input, &output)?;
+                // Generate constraints for this gate.
+                let gate_constraints = interpret_gate(gate, &input, &output)?;
 
-            Ok(CompileState {
-                allocator,
-                constraints: state.constraints.merge(gate_constraints),
-                prev_output: Some(output),
-            })
-        })?;
+                Ok(CompileState {
+                    allocator,
+                    constraints: state.constraints.merge(gate_constraints),
+                    prev_output: Some(output),
+                })
+            })?;
 
     Ok(result.constraints)
 }
@@ -154,13 +146,10 @@ pub fn compile_with_io<F: Field>(
         return Ok((ConstraintSet::empty(), empty_range, empty_range));
     }
 
-    let initial_input_count = path
-        .edges()
-        .first()
-        .map_or(Ok(WireCount::new(0)), |e| {
-            let spec = graph.gate_spec_at(*e)?;
-            graph.wire_count_at(spec.source())
-        })?;
+    let initial_input_count = path.edges().first().map_or(Ok(WireCount::new(0)), |e| {
+        let spec = graph.gate_spec_at(*e)?;
+        graph.wire_count_at(spec.source())
+    })?;
 
     let allocator = WireAllocator::new();
     let (input_range, allocator) = allocator.allocate(initial_input_count);
@@ -171,32 +160,32 @@ pub fn compile_with_io<F: Field>(
         prev_output: Some(input_range),
     };
 
-    let result = path
-        .edges()
-        .iter()
-        .try_fold(initial, |state, edge| -> Result<CompileState<F>, Error> {
-            let spec = graph.gate_spec_at(*edge)?;
-            let gate = spec.gate();
+    let result =
+        path.edges()
+            .iter()
+            .try_fold(initial, |state, edge| -> Result<CompileState<F>, Error> {
+                let spec = graph.gate_spec_at(*edge)?;
+                let gate = spec.gate();
 
-            let input = state.prev_output.unwrap_or(
-                WireRange::new(crate::wire::Wire::new(0), WireCount::new(0)),
-            );
+                let input = state
+                    .prev_output
+                    .unwrap_or(WireRange::new(crate::wire::Wire::new(0), WireCount::new(0)));
 
-            let output_count = graph.wire_count_at(spec.target())?;
-            let (output, allocator) = state.allocator.allocate(output_count);
+                let output_count = graph.wire_count_at(spec.target())?;
+                let (output, allocator) = state.allocator.allocate(output_count);
 
-            let gate_constraints = interpret_gate(gate, &input, &output)?;
+                let gate_constraints = interpret_gate(gate, &input, &output)?;
 
-            Ok(CompileState {
-                allocator,
-                constraints: state.constraints.merge(gate_constraints),
-                prev_output: Some(output),
-            })
-        })?;
+                Ok(CompileState {
+                    allocator,
+                    constraints: state.constraints.merge(gate_constraints),
+                    prev_output: Some(output),
+                })
+            })?;
 
-    let output_range = result.prev_output.unwrap_or(
-        WireRange::new(crate::wire::Wire::new(0), WireCount::new(0)),
-    );
+    let output_range = result
+        .prev_output
+        .unwrap_or(WireRange::new(crate::wire::Wire::new(0), WireCount::new(0)));
 
     Ok((result.constraints, input_range, output_range))
 }
@@ -204,9 +193,9 @@ pub fn compile_with_io<F: Field>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::F101;
     use crate::wire::Wire;
     use comp_cat_rs::collapse::free_category::{Edge, Path};
+    use field_cat::F101;
 
     fn make_assignment(values: &[(usize, u64)]) -> impl Fn(Wire) -> Result<F101, Error> + '_ {
         move |w| {

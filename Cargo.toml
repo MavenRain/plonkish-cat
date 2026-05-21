@@ -1,6 +1,6 @@
 [package]
 name = "plonkish-cat"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2024"
 description = "PLONKish circuit system built on comp-cat-rs: circuits as morphisms in a free category"
 license = "MIT"
@@ -10,6 +10,7 @@ categories = ["mathematics", "cryptography"]
 
 [dependencies]
 comp-cat-rs = "0.5"
+field-cat = "0.1"
 
 [lints.clippy]
 all = { level = "deny", priority = -1 }

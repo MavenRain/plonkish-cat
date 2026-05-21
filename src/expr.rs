@@ -5,8 +5,9 @@
 //! constraint generation and evaluated against wire assignments
 //! for satisfaction checking.
 
+use field_cat::Field;
+
 use crate::error::Error;
-use crate::field::Field;
 use crate::wire::Wire;
 
 /// A symbolic polynomial expression over field `F` and wire indices.
@@ -95,7 +96,7 @@ impl<F: Field> std::ops::Neg for Expression<F> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::field::F101;
+    use field_cat::F101;
 
     fn test_assignment(w: Wire) -> Result<F101, Error> {
         match w.index() {

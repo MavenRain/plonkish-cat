@@ -4,9 +4,10 @@
 //! constraints.  It supports merging for composition during
 //! the interpretation fold.
 
+use field_cat::Field;
+
 use crate::error::Error;
 use crate::expr::Expression;
-use crate::field::Field;
 use crate::wire::Wire;
 
 /// A polynomial constraint: the expression must equal zero.
@@ -40,9 +41,7 @@ impl<F: Field> Constraint<F> {
         &self,
         assignment: &dyn Fn(Wire) -> Result<F, Error>,
     ) -> Result<bool, Error> {
-        self.expression
-            .evaluate(assignment)
-            .map(|v| v == F::zero())
+        self.expression.evaluate(assignment).map(|v| v == F::zero())
     }
 }
 
@@ -179,21 +178,18 @@ impl<F: Field> ConstraintSet<F> {
         &self,
         assignment: &dyn Fn(Wire) -> Result<F, Error>,
     ) -> Result<bool, Error> {
-        let polys_ok = self
-            .constraints
-            .iter()
-            .try_fold(true, |acc, c| {
-                c.is_satisfied(assignment).map(|ok| acc && ok)
-            })?;
+        let polys_ok = self.constraints.iter().try_fold(true, |acc, c| {
+            c.is_satisfied(assignment).map(|ok| acc && ok)
+        })?;
 
-        let copies_ok = self
-            .copy_constraints
-            .iter()
-            .try_fold(true, |acc, cc| -> Result<bool, Error> {
-                let l = assignment(cc.left())?;
-                let r = assignment(cc.right())?;
-                Ok(acc && l == r)
-            })?;
+        let copies_ok =
+            self.copy_constraints
+                .iter()
+                .try_fold(true, |acc, cc| -> Result<bool, Error> {
+                    let l = assignment(cc.left())?;
+                    let r = assignment(cc.right())?;
+                    Ok(acc && l == r)
+                })?;
 
         Ok(polys_ok && copies_ok)
     }

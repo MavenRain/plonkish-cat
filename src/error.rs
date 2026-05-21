@@ -21,8 +21,6 @@ pub enum Error {
         /// The actual wire count.
         actual: usize,
     },
-    /// Attempted to invert zero in the field.
-    DivisionByZero,
 }
 
 impl core::fmt::Display for Error {
@@ -39,7 +37,6 @@ impl core::fmt::Display for Error {
             Self::WireCountMismatch { expected, actual } => {
                 write!(f, "wire count mismatch: expected {expected}, got {actual}")
             }
-            Self::DivisionByZero => write!(f, "division by zero"),
         }
     }
 }
@@ -48,9 +45,7 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::FreeCategory(e) => Some(e),
-            Self::WireOutOfBounds { .. }
-            | Self::WireCountMismatch { .. }
-            | Self::DivisionByZero => None,
+            Self::WireOutOfBounds { .. } | Self::WireCountMismatch { .. } => None,
         }
     }
 }

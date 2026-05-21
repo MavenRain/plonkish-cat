@@ -5,8 +5,8 @@
 //! Implements [`Graph`] from comp-cat-rs.
 
 use comp_cat_rs::collapse::free_category::{Edge, FreeCategoryError, Graph, Vertex};
+use field_cat::Field;
 
-use crate::field::Field;
 use crate::wire::WireCount;
 
 /// A primitive gate in the `PLONKish` circuit.

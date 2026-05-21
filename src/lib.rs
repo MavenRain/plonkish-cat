@@ -19,32 +19,38 @@
 //!
 //! ```rust
 //! use plonkish_cat::*;
+//! use field_cat::F101;
 //! use comp_cat_rs::collapse::free_category::{Edge, Path};
 //!
 //! // Build the standard `PLONKish` graph.
 //! let graph = PlonkishGraph::<F101>::standard();
 //!
 //! // Compose: dup (1 -> 2) then mul (2 -> 1) = squaring circuit.
-//! let dup = Path::singleton(&graph, Edge::new(3)).unwrap();
-//! let mul = Path::singleton(&graph, Edge::new(1)).unwrap();
-//! let square = dup.compose(mul).unwrap();
+//! let dup = Path::singleton(&graph, Edge::new(3))?;
+//! let mul = Path::singleton(&graph, Edge::new(1))?;
+//! let square = dup.compose(mul)?;
 //!
 //! // Compile to constraints.
-//! let constraints = compile(&graph, &square).unwrap();
+//! let _constraints = compile(&graph, &square)?;
+//! # Ok::<(), plonkish_cat::Error>(())
 //! ```
+//!
+//! The [`Field`](field_cat::Field) trait and the toy
+//! [`F101`](field_cat::F101) field used in this example live in
+//! the sibling [`field_cat`] crate so they can be shared with
+//! STARK-flavored downstreams without inheriting the `PLONKish`
+//! constraint vocabulary.
 
-pub mod error;
-pub mod field;
-pub mod wire;
-pub mod expr;
 pub mod constraint;
+pub mod error;
+pub mod expr;
 pub mod gate;
 pub mod interpret;
+pub mod wire;
 
+pub use constraint::{Constraint, ConstraintSet, CopyConstraint};
 pub use error::Error;
-pub use field::{F101, Field};
-pub use wire::{Wire, WireAllocator, WireCount, WireRange};
 pub use expr::Expression;
-pub use constraint::{Constraint, CopyConstraint, ConstraintSet};
 pub use gate::{PlonkishGraph, PrimitiveGate};
 pub use interpret::compile;
+pub use wire::{Wire, WireAllocator, WireCount, WireRange};
